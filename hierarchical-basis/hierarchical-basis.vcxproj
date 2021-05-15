@@ -158,6 +158,9 @@
     <ClInclude Include="structs.h" />
     <ClInclude Include="task.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="input\grid_space.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

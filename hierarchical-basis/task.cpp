@@ -29,7 +29,7 @@ void Task::init() {
 	fin.close();
 
 	initSpaceGrid();
-	//formatingGlobalMatrixPortrait();
+	formatingGlobalMatrixPortrait();
 
 	localMatrix = std::vector<double>(elemsInLocalMatrix);
 	localRightPart = std::vector<double>(elemsInLocalRightPart);
@@ -535,37 +535,27 @@ void Task::formatingGlobalMatrixPortrait() {
 
 	// Формирование связей
 	for (auto& el : elems) {
-		// По особенностям нумерации: для всех элементов, 
-		// Номер грани 0 < номера грани 2
-		// Номер грани 3 < номера грани 1
-		// Номер грани 4 < номера грани 5
-		if (!hasValue(temp[el.info[2]], el.info[0])) temp[el.info[2]].push_back(el.info[0]); // Рассмотрение fxz
-		if (!hasValue(temp[el.info[1]], el.info[3])) temp[el.info[1]].push_back(el.info[3]); // Рассмотрение fyz
-		if (!hasValue(temp[el.info[5]], el.info[4])) temp[el.info[5]].push_back(el.info[4]); // Рассмотрение fxy
+		/*
+			[2] - [8] - [3]
+			 |	   |	 |
+			[5] - [4] - [7]
+			 |	   |	 |
+			[0] - [6] - [1]
+		*/
+		
+		auto elInfo = el.info;
 
-		// for second speeds:
-		if (!hasValue(temp[el.info[8]], el.info[6])) temp[el.info[8]].push_back(el.info[6]); // Рассмотрение fxz
-		if (!hasValue(temp[el.info[7]], el.info[9])) temp[el.info[7]].push_back(el.info[9]); // Рассмотрение fyz
-		if (!hasValue(temp[el.info[11]], el.info[10])) temp[el.info[11]].push_back(el.info[10]); // Рассмотрение fxy
+		// delete "-1 functions (fictious)"
+		elInfo.erase(std::remove_if(elInfo.begin(), elInfo.end(), [](int x) {return x == -1; }), elInfo.end());
+		
+		// increase sort functions
+		std::sort(elInfo.begin(), elInfo.end());
 
-		// Номер любой грани < номера элемента
-		if (!hasValue(temp[el.info[12]], el.info[0])) temp[el.info[12]].push_back(el.info[0]);
-		if (!hasValue(temp[el.info[12]], el.info[1])) temp[el.info[12]].push_back(el.info[1]);
-		if (!hasValue(temp[el.info[12]], el.info[2])) temp[el.info[12]].push_back(el.info[2]);
-		if (!hasValue(temp[el.info[12]], el.info[3])) temp[el.info[12]].push_back(el.info[3]);
-		if (!hasValue(temp[el.info[12]], el.info[4])) temp[el.info[12]].push_back(el.info[4]);
-		if (!hasValue(temp[el.info[12]], el.info[5])) temp[el.info[12]].push_back(el.info[5]);
-		if (!hasValue(temp[el.info[12]], el.info[6])) temp[el.info[12]].push_back(el.info[6]);
-		if (!hasValue(temp[el.info[12]], el.info[7])) temp[el.info[12]].push_back(el.info[7]);
-		if (!hasValue(temp[el.info[12]], el.info[8])) temp[el.info[12]].push_back(el.info[8]);
-		if (!hasValue(temp[el.info[12]], el.info[9])) temp[el.info[12]].push_back(el.info[9]);
-		if (!hasValue(temp[el.info[12]], el.info[10])) temp[el.info[12]].push_back(el.info[10]);
-		if (!hasValue(temp[el.info[12]], el.info[11])) temp[el.info[12]].push_back(el.info[11]);
-
-		// for saturation things:
-		if (!hasValue(temp[el.info[13]], el.info[12])) temp[el.info[13]].push_back(el.info[12]);
-		if (!hasValue(temp[el.info[14]], el.info[12])) temp[el.info[14]].push_back(el.info[12]);
-		if (!hasValue(temp[el.info[14]], el.info[13])) temp[el.info[14]].push_back(el.info[13]);
+		for (int rowInd = 1; rowInd < elInfo.size(); rowInd++) {
+			for (int columnInd = 0; columnInd < rowInd; columnInd++) {
+				if (!hasValue(temp[elInfo[rowInd]], elInfo[columnInd])) temp[elInfo[rowInd]].push_back(elInfo[columnInd]);
+			}
+		}
 	}
 
 	// Сортировка столбцов
