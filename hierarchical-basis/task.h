@@ -3,13 +3,13 @@
 #include <vector>
 #include <fstream>
 #include "matrix.h"
+#include "GaussIntegration.h"
 
 // Для определения x и y элемента скважины
 struct XY {
 	int x;
 	int y;
 };
-
 
 struct Node {
 	Node() = default;
@@ -43,6 +43,9 @@ struct FiniteElem {
 };
 
 class Task {
+	using func1 = std::function<double(double)>;
+	using func2 = std::function<double(double, double)>;
+
 public:
 	void init();
 
@@ -61,6 +64,24 @@ private:
 	void fillAxisGrid(std::vector<double>& axis, double a, double b , int steps, double coef, const int k);
 
 private:
+	GaussIntegration gaussIntegration;
+	const int gaussIntegrationOrder = 2;
+
+	// Hierarchical basis functions
+	func1 ff1 = [](double x) { return (1 - x)/2; };
+	func1 ff2 = [](double x) { return (1 + x)/2; };
+	func1 ff3 = [](double x) { return 1 - x * x; };
+
+	func2 f1 = [this](double x, double y) { return ff1(x) * ff1(y); };
+	func2 f2 = [this](double x, double y) { return ff2(x) * ff1(y); };
+	func2 f3 = [this](double x, double y) { return ff1(x) * ff2(y); };
+	func2 f4 = [this](double x, double y) { return ff2(x) * ff2(y); };
+	func2 f5 = [this](double x, double y) { return ff1(x) * ff3(y); };
+	func2 f6 = [this](double x, double y) { return ff2(x) * ff3(y); };
+	func2 f7 = [this](double x, double y) { return ff3(x) * ff1(y); };
+	func2 f8 = [this](double x, double y) { return ff3(x) * ff2(y); };
+	func2 f9 = [this](double x, double y) { return ff3(x) * ff3(y); };
+
 	static const int elemsInLocalMatrix = 16;
 	static const int elemsInLocalRightPart = 7;
 

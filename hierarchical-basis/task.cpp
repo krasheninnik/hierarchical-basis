@@ -28,6 +28,8 @@ void Task::init() {
 	fin >> lambda;
 	fin.close();
 
+	gaussIntegration.init(gaussIntegrationOrder);
+
 	initSpaceGrid();
 	formatingGlobalMatrixPortrait();
 
