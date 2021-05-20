@@ -48,6 +48,7 @@ class Task {
 
 public:
 	void init();
+	void initParams();
 
 	void solve();
 private:
@@ -67,35 +68,33 @@ private:
 	GaussIntegration gaussIntegration;
 	const int gaussIntegrationOrder = 2;
 
-	// Hierarchical basis functions
-	func1 ff1 = [](double x) { return (1 - x)/2; };
-	func1 ff2 = [](double x) { return (1 + x)/2; };
-	func1 ff3 = [](double x) { return 1 - x * x; };
+	// Hierarchical basis functions and derivates	
+	std::vector<func2> localFunc;
+	std::vector<func2> localDFunc;
 
-	func2 f1 = [this](double x, double y) { return ff1(x) * ff1(y); };
-	func2 f2 = [this](double x, double y) { return ff2(x) * ff1(y); };
-	func2 f3 = [this](double x, double y) { return ff1(x) * ff2(y); };
-	func2 f4 = [this](double x, double y) { return ff2(x) * ff2(y); };
-	func2 f5 = [this](double x, double y) { return ff1(x) * ff3(y); };
-	func2 f6 = [this](double x, double y) { return ff2(x) * ff3(y); };
-	func2 f7 = [this](double x, double y) { return ff3(x) * ff1(y); };
-	func2 f8 = [this](double x, double y) { return ff3(x) * ff2(y); };
-	func2 f9 = [this](double x, double y) { return ff3(x) * ff3(y); };
+	static const int numOfBasisFunctions = 9;
 
-	static const int elemsInLocalMatrix = 16;
-	static const int elemsInLocalRightPart = 7;
-
-	double lambda; // Коэффициент уравнения (вязкость / проницаемость)
+	double lambda = 1; // Коэффициент уравнения (вязкость / проницаемость)
+	double gamma = 1;
 
 	std::vector<Node> nodes;
 	std::vector<FiniteElem> elems;
 
 	std::vector<int> boundariesValue;
 
+	std::vector<int> boundariesElemsTop;
+	std::vector<int> boundariesElemsBottom;
+	std::vector<int> boundariesElemsLeft;
+	std::vector<int> boundariesElemsRight;
+	func2 boundaryFunction;
+	func2 rightPartFunction;
+
 	SparseMatrix globalMatrix;
 	std::vector<double> f; // Глобальная правая часть
 	std::vector<double> x; // Решение
-	std::vector<double> localMatrix;
+	double resultInXY(double x, double y);
+
+	std::vector<std::vector<double>> localMatrix;
 	std::vector<double> localRightPart;
 
 	// Информация о сетке:

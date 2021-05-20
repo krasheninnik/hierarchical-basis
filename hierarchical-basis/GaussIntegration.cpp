@@ -36,6 +36,9 @@ void GaussIntegration::init(int n) {
 	}
 }
 
+double GaussIntegration::varChange(double var, double a, double b) {
+	return (b + a) / 2.0 + (b - a) / 2.0 * var;
+}
 
 double GaussIntegration::nPointsGauss(double a, double b, std::function<double(double)> f) {
 	double result = 0.0;

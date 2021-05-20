@@ -32,9 +32,10 @@ void Task::init() {
 
 	initSpaceGrid();
 	formatingGlobalMatrixPortrait();
+	initParams();
 
-	localMatrix = std::vector<double>(elemsInLocalMatrix);
-	localRightPart = std::vector<double>(elemsInLocalRightPart);
+	localMatrix = std::vector<std::vector<double>>(numOfBasisFunctions, std::vector<double>(numOfBasisFunctions));
+	localRightPart = std::vector<double>(numOfBasisFunctions);
 
 	// Аллокация памяти для решения СЛАУ
 	const int elemsInMatrix = globalMatrix.getAmountElems();
@@ -44,6 +45,40 @@ void Task::init() {
 	x = std::vector<double>(dimMatrix);
 	temp = std::vector<double>(dimMatrix);
 	temp2 = std::vector<double>(dimMatrix);
+
+	// init local functions:
+	// Hierarchical basis functions
+	func1 f1 = [](double x) { return (1 - x) / 2; };
+	func1 f2 = [](double x) { return (1 + x) / 2; };
+	func1 f3 = [](double x) { return 1 - x * x; };
+
+	// Hierarchical basis derivatives
+	func1 df1 = [](double x) { return - 0.5; };
+	func1 df2 = [](double x) { return	0.5; };
+	func1 df3 = [](double x) { return - 2 * x; };
+
+	localFunc.resize(numOfBasisFunctions);
+	localDFunc.resize(numOfBasisFunctions);
+
+	localFunc[0] = [f1, f2, f3](double x, double y) { return f1(x) * f1(y); };
+	localFunc[1] = [f1, f2, f3](double x, double y) { return f2(x) * f1(y); };
+	localFunc[2] = [f1, f2, f3](double x, double y) { return f1(x) * f2(y); };
+	localFunc[3] = [f1, f2, f3](double x, double y) { return f2(x) * f2(y); };
+	localFunc[4] = [f1, f2, f3](double x, double y) { return f1(x) * f3(y); };
+	localFunc[5] = [f1, f2, f3](double x, double y) { return f2(x) * f3(y); };
+	localFunc[6] = [f1, f2, f3](double x, double y) { return f3(x) * f1(y); };
+	localFunc[7] = [f1, f2, f3](double x, double y) { return f3(x) * f2(y); };
+	localFunc[8] = [f1, f2, f3](double x, double y) { return f3(x) * f3(y); };
+
+	localDFunc[0] = [df1, df2, df3](double x, double y) { return df1(x) * df1(y); };
+	localDFunc[1] = [df1, df2, df3](double x, double y) { return df2(x) * df1(y); };
+	localDFunc[2] = [df1, df2, df3](double x, double y) { return df1(x) * df2(y); };
+	localDFunc[3] = [df1, df2, df3](double x, double y) { return df2(x) * df2(y); };
+	localDFunc[4] = [df1, df2, df3](double x, double y) { return df1(x) * df3(y); };
+	localDFunc[5] = [df1, df2, df3](double x, double y) { return df2(x) * df3(y); };
+	localDFunc[6] = [df1, df2, df3](double x, double y) { return df3(x) * df1(y); };
+	localDFunc[7] = [df1, df2, df3](double x, double y) { return df3(x) * df2(y); };
+	localDFunc[8] = [df1, df2, df3](double x, double y) { return df3(x) * df3(y); };
 }
 
 void Task::fillAxisGrid(std::vector<double>& axis, double a, double b, int steps, double coef, const int k) {
@@ -447,6 +482,19 @@ void Task::initSpaceGrid() {
 		}
 	}
 
+	
+
+	// forming boundariesElems vectors
+	boundariesElemsTop.resize(nx);
+	boundariesElemsBottom.resize(nx);
+	boundariesElemsLeft.resize(ny);
+	boundariesElemsRight.resize(ny);
+
+	for (int i = 0; i < nx; i++) boundariesElemsBottom[i] = i;
+	for (int i = 0, elInd = nx*(ny-1); i < nx; i++, elInd++) boundariesElemsTop[i] = elInd;
+	for (int i = 0, elInd = 0; i < ny; i++, elInd+=nx) boundariesElemsLeft[i] = elInd;
+	for (int i = 0, elInd = nx - 1; i < ny; i++, elInd += nx) boundariesElemsRight[i] = elInd;
+
 	// for sake of debug elems orders:
 	bool drawOrders = false;
 	bool drawElems = false;
@@ -523,8 +571,6 @@ void Task::initSpaceGrid() {
 
 	fin.close();
 }
-
-
 	
 void Task::formatingGlobalMatrixPortrait() {
 	const int DIM = elems.back().info.back() + 1;
@@ -583,93 +629,192 @@ void Task::formatingGlobalMatrixPortrait() {
 }
 
 void Task::calculateLocalMatrix(const FiniteElem &el) {
-	/*
-			!!! CHANGE IT !!!
-	*/
+	double x1 = nodes[el.nodes[1]].x;
+	double x0 = nodes[el.nodes[0]].x;
 
-	double dx = nodes[el.nodes[1]].x - nodes[el.nodes[0]].x;
-	double dy = nodes[el.nodes[3]].y - nodes[el.nodes[0]].y;
+	double y1 = nodes[el.nodes[2]].y;
+	double y0 = nodes[el.nodes[0]].y;
+
+	double dx = x1 - x0;
+	double dy = y1 - y0;
 
 	assert(dx > 0);
 	assert(dy > 0);
 
-	double V = dx * dy;
-	const double dt = 1;
-	// speed variables
-	localMatrix[0] = lambda * V * 1.0 / 3;
-	localMatrix[1] = lambda * V * 1.0 / 6;
-	localMatrix[2] = lambda * V * 1.0 / 3;
-	localMatrix[3] = lambda * V * 1.0 / 3;
-	localMatrix[4] = lambda * V * 1.0 / 6;
+	// calculate (gradU gradV) integral
+	for (int row = 0; row < el.info.size(); row++) {
+		for (int column = 0; column <= row; column++) {
+			auto func = [this, row, column](double x, double y) {return this->lambda * this->localDFunc[row](x, y) * this->localDFunc[column](x, y); };
+			localMatrix[row][column] = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+		}
+	}
+
+	// calculate (U V) integral 
+	for (int row = 0; row < el.info.size(); row++) {
+		for (int column = 0; column <= row; column++) {
+			auto func = [this, row, column](double x, double y) {return this->gamma  * this->localFunc[row](x, y) * this->localFunc[column](x, y); };
+			localMatrix[row][column] += gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+		}
+	}
 }
 
 void Task::calculateLocalRightPart(const FiniteElem& el) {
-	/*
-		!!! CHANGE IT !!!
-	*/
-	double dx = nodes[el.nodes[1]].x - nodes[el.nodes[0]].x;
-	double dy = nodes[el.nodes[3]].y - nodes[el.nodes[0]].y;
+	double x1 = nodes[el.nodes[1]].x;
+	double x0 = nodes[el.nodes[0]].x;
 
-	localRightPart[0] = 0; // 
-	localRightPart[1] = 0; //
-	localRightPart[2] = 0; // если g == 0
+	double y1 = nodes[el.nodes[2]].y;
+	double y0 = nodes[el.nodes[0]].y;
 
+	double dx = x1 - x0;
+	double dy = y1 - y0;
+
+	// calculate (f V) integral
+	for (int row = 0; row < localMatrix.size(); row++) {
+		auto func = [this, row](double x, double y) {return this->boundaryFunction(x,y) * this->localFunc[row](x, y); };
+		localRightPart[row] = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+	}
 }
 
 void Task::addLocalMatrixToGlobal(const FiniteElem& elem) {
-	/*
-		!!! CHANGE IT !!!
-	*/
+	// add diagonal elements:
+	for (int i = 0; i < elem.info.size(); i++) {
+		if (elem.info[i] != -1) {
+			globalMatrix.addDiagElem(elem.info[i], localMatrix[i][i]);
+		}
+	}
 
-	// TODO: consider new mapping local to global;
+	// add function links
+	for (int i = 1; i < elem.info.size(); i++) {
+		if (elem.info[i] != -1) {
+			for (int j = 0; j < i; j++)
+				if (elem.info[j] != -1) {
+					// probably something will go wrong !!!
+					int rowGlobalInd = max(elem.info[i], elem.info[j]);
+					int columnGlobalInd = min(elem.info[i], elem.info[j]);
 
-	globalMatrix.addDiagElem(elem.info[0], localMatrix[3]);
-	globalMatrix.addDiagElem(elem.info[2], localMatrix[5]);
-
-	globalMatrix.addDiagElem(elem.info[1], localMatrix[2]);
-	globalMatrix.addDiagElem(elem.info[3], localMatrix[0]);
-
-	globalMatrix.addDiagElem(elem.info[4], localMatrix[6]);
-	globalMatrix.addDiagElem(elem.info[5], localMatrix[8]);
-
-						// строка  	  // столбец	// элемент
-	globalMatrix.addElem(elem.info[1], elem.info[3], localMatrix[1]);
-	globalMatrix.addElem(elem.info[2], elem.info[0], localMatrix[4]);
-	globalMatrix.addElem(elem.info[5], elem.info[4], localMatrix[7]);
-
-	globalMatrix.addElem(elem.info[6], elem.info[3], localMatrix[9]);
-	globalMatrix.addElem(elem.info[6], elem.info[1], localMatrix[10]);
-	globalMatrix.addElem(elem.info[6], elem.info[0], localMatrix[11]);
-	globalMatrix.addElem(elem.info[6], elem.info[2], localMatrix[12]);
-	globalMatrix.addElem(elem.info[6], elem.info[4], localMatrix[13]);
-	globalMatrix.addElem(elem.info[6], elem.info[5], localMatrix[14]);
+					globalMatrix.addElem(rowGlobalInd, columnGlobalInd, localMatrix[i][j]);
+				}
+		}
+	}
 }
 
 void Task::addLocalRigtPartToGlobal(const FiniteElem& elem) {
-	/*
-		!!! CHANGE IT !!!
-	*/
-	// TODO: consider new mapping local to global;
-	f[elem.info[0]] += localRightPart[2];
-	f[elem.info[1]] += localRightPart[1];
-	f[elem.info[2]] += localRightPart[3];
-	f[elem.info[3]] += localRightPart[0];
-	f[elem.info[4]] += localRightPart[4];
-	f[elem.info[5]] += localRightPart[5];
-	f[elem.info[6]] += localRightPart[6];
+	for (int i = 0; i < elem.info.size(); i++) {
+		if (elem.info[i] != -1) {
+			f[elem.info[i]] += localRightPart[i];
+		}
+	}
 }
 
 void Task::setFirstBoundaryConditions() {
-	/*
-	!!! CHANGE IT !!!
-*/
+	// =============================================================================================
+	// ADD BOTTOM ELEMS:
+	for (int ind : boundariesElemsBottom) {
+		auto& elem = elems[ind];
 
-	// TODO: what we have with the Boundary conditions?;
-	for (int ind : boundariesValue) {
-		globalMatrix.setFirstBoundaryCondition(ind);
-		f[ind] = 100;
-		throw "not implemented";
+		double x1 = nodes[elem.nodes[1]].x;
+		double x0 = nodes[elem.nodes[0]].x;
+
+		double y1 = nodes[elem.nodes[2]].y;
+		double y0 = nodes[elem.nodes[0]].y;
+
+		// add left bottom elem
+		globalMatrix.setFirstBoundaryCondition(elem.info[0]);
+		f[elem.info[0]] = boundaryFunction(x0, y0);
+
+		if (elem.functionOrder == 2) {
+			// add mid bottom elem
+			globalMatrix.setFirstBoundaryCondition(elem.info[6]);
+			f[elem.info[6]] = boundaryFunction((x0 + x1) / 2, y0);
+		}
 	}
+
+	// add last elem
+	auto lastElem = elems[boundariesElemsBottom.back()];
+	globalMatrix.setFirstBoundaryCondition(lastElem.info[1]);
+	f[lastElem.info[1]] = boundaryFunction(nodes[lastElem.nodes[1]].x, nodes[lastElem.nodes[1]].y);
+
+	// =============================================================================================
+	// ADD TOP ELEMS:
+	for (int ind : boundariesElemsTop) {
+		auto& elem = elems[ind];
+
+		double x1 = nodes[elem.nodes[1]].x;
+		double x0 = nodes[elem.nodes[0]].x;
+
+		double y1 = nodes[elem.nodes[2]].y;
+		double y0 = nodes[elem.nodes[0]].y;
+
+		// add left top elem
+		globalMatrix.setFirstBoundaryCondition(elem.info[2]);
+		f[elem.info[2]] = boundaryFunction(x0, y1);
+
+		if (elem.functionOrder == 2) {
+			// add mid bottom elem
+			globalMatrix.setFirstBoundaryCondition(elem.info[8]);
+			f[elem.info[8]] = boundaryFunction((x0 + x1) / 2, y1);
+		}
+	}
+
+	// add last elem
+	lastElem = elems[boundariesElemsTop.back()];
+	globalMatrix.setFirstBoundaryCondition(lastElem.info[3]);
+	f[lastElem.info[3]] = boundaryFunction(nodes[lastElem.nodes[3]].x, nodes[lastElem.nodes[3]].y);
+
+	// =============================================================================================
+	// ADD LEFT ELEMS:
+	for (int ind : boundariesElemsLeft) {
+		auto& elem = elems[ind];
+
+		double x1 = nodes[elem.nodes[1]].x;
+		double x0 = nodes[elem.nodes[0]].x;
+
+		double y1 = nodes[elem.nodes[2]].y;
+		double y0 = nodes[elem.nodes[0]].y;
+
+		// add bottom left elem
+		globalMatrix.setFirstBoundaryCondition(elem.info[0]);
+		f[elem.info[0]] = boundaryFunction(x0, y0);
+
+		if (elem.functionOrder == 2) {
+			// add mid bottom elem
+			globalMatrix.setFirstBoundaryCondition(elem.info[5]);
+			f[elem.info[5]] = boundaryFunction(x0, (y0+y1)/2);
+		}
+	}
+
+	// add last elem
+	lastElem = elems[boundariesElemsLeft.back()];
+	globalMatrix.setFirstBoundaryCondition(lastElem.info[2]);
+	f[lastElem.info[2]] = boundaryFunction(nodes[lastElem.nodes[2]].x, nodes[lastElem.nodes[2]].y);
+
+	// =============================================================================================
+	// ADD RIGHT ELEMS:
+	for (int ind : boundariesElemsRight) {
+		auto& elem = elems[ind];
+
+		double x1 = nodes[elem.nodes[1]].x;
+		double x0 = nodes[elem.nodes[0]].x;
+
+		double y1 = nodes[elem.nodes[2]].y;
+		double y0 = nodes[elem.nodes[0]].y;
+
+		// add bottom right elem
+		globalMatrix.setFirstBoundaryCondition(elem.info[1]);
+		f[elem.info[1]] = boundaryFunction(x1, y0);
+
+		if (elem.functionOrder == 2) {
+			// add mid bottom elem
+			globalMatrix.setFirstBoundaryCondition(elem.info[7]);
+			f[elem.info[5]] = boundaryFunction(x1, (y0 + y1) / 2);
+		}
+	}
+
+	// add last elem
+	lastElem = elems[boundariesElemsRight.back()];
+	globalMatrix.setFirstBoundaryCondition(lastElem.info[3]);
+	f[lastElem.info[3]] = boundaryFunction(nodes[lastElem.nodes[3]].x, nodes[lastElem.nodes[3]].y);
+	// =============================================================================================
 }
 
 void Task::PARDISOsolve() {
@@ -722,19 +867,100 @@ void Task::PARDISOsolve() {
 	return;
 }
 
+double Task::resultInXY(double xCord, double yCord) {
+	if (xCord < nodes[elems[boundariesElemsBottom[0]].nodes[0]].x ||
+		xCord > nodes[elems[boundariesElemsBottom.back()].nodes[1]].x) {
+		std::cout << "x = " << xCord << " not in defined area" << std::endl;
+		return -999999;
+	}
+
+	if (yCord < nodes[elems[boundariesElemsLeft[0]].nodes[0]].y ||
+		yCord > nodes[elems[boundariesElemsLeft.back()].nodes[2]].y) {
+		std::cout << "y = " << yCord << " not in defined area" << std::endl;
+		return -999999;
+	}
+
+
+	int xi = 0;
+	for (; xi < boundariesElemsBottom.size(); xi++) {
+		auto& el = elems[boundariesElemsBottom[xi]];
+		if (nodes[el.nodes[0]].x <= xCord && xCord <= nodes[el.nodes[1]].x) {
+			break;
+		}
+	}
+
+	int yi = 0;
+	for (; yi < boundariesElemsLeft.size(); yi++) {
+		auto& el = elems[boundariesElemsLeft[yi]];
+		if (nodes[el.nodes[0]].y <= yCord && yCord <= nodes[el.nodes[2]].y) {
+			break;
+		}
+	}
+
+	int elemInd = yi;
+	auto& elem = elems[elemInd];
+	
+
+	double x1 = nodes[elem.nodes[1]].x;
+	double x0 = nodes[elem.nodes[0]].x;
+
+	double y1 = nodes[elem.nodes[2]].y;
+	double y0 = nodes[elem.nodes[0]].y;
+
+	auto changeVariable = [](double x, double a, double b) {
+		double halflenght = (b - a) / 2;
+		return (x - a - halflenght) / halflenght;
+	};
+
+	double res = 0;
+	for(int ind = 0; ind < elem.info.size(); ind++) {
+		if (elem.info[ind] != -1) {
+			res += x[elem.info[ind]] * localFunc[ind](
+				changeVariable(xCord, x0, x1),
+				changeVariable(yCord, y0, y1));
+		}
+	}
+	
+	return res;
+}
+
+void Task::initParams() {
+	boundaryFunction = [](double x, double y) {return 10 * x + y; };
+	rightPartFunction = [](double x, double y) {return 10 * x + y; };
+
+	lambda = 0;
+	gamma = 1;
+};
 
 void Task::solve() {
 	for (auto& el : elems) {
 		calculateLocalMatrix(el);
-		//calculateLocalRightPart(el);
+		calculateLocalRightPart(el);
 
 		addLocalMatrixToGlobal(el);
-		//addLocalRigtPartToGlobal(el);
+		addLocalRigtPartToGlobal(el);
 	}
 
 	// Дублирование элементов из нижнего треугольника матрицы в верхний
 	globalMatrix.fillGGU();
-
 	setFirstBoundaryConditions();
+
 	PARDISOsolve();
+	
+	std:cout << "calculated: " << std::endl;
+	double a1 = resultInXY(1.5, 1.5);
+	double a2 = resultInXY(1, 5);
+	double a3 = resultInXY(5, 1);
+	double a4 = resultInXY(10, 0);
+	double a5 = resultInXY(5, 5);
+	double a6 = resultInXY(5, 20);
+	
+	std::cout << a1 << std::endl 
+		<< a2 << std::endl 
+		<< a3 << std::endl 
+		<< a4 << std::endl 
+		<< a5 << std::endl 
+		<< a6 << std::endl;
+
+	double a7 = resultInXY(5, 20);
 }

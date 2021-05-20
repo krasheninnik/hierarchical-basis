@@ -5,5 +5,5 @@ void main() {
 	Task T;
 	T.init();
 
-	//T.solve();
+	T.solve();
 }

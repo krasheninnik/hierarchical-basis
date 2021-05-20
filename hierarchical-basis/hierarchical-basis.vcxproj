@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FormatConverter.cpp" />
+    <ClCompile Include="GaussIntegration.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matrix.cpp" />
     <ClCompile Include="pardiso.cpp" />
@@ -152,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FormatConverter.h" />
+    <ClInclude Include="GaussIntegration.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="pardiso.h" />
     <ClInclude Include="stdafx.h" />
