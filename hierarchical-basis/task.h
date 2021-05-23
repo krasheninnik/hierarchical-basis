@@ -66,7 +66,7 @@ private:
 
 private:
 	GaussIntegration gaussIntegration;
-	const int gaussIntegrationOrder = 2;
+	const int gaussIntegrationOrder = 5;
 
 	// Hierarchical basis functions and derivates	
 	std::vector<func2> localFunc;
@@ -110,6 +110,9 @@ private:
 	int fyz;
 	int faceNumInZlayer;
 	int faceNum;
+
+	std::vector<double> xaxis;
+	std::vector<double> yaxis;
 
 	std::vector<double> temp;
 	std::vector<double> temp2;
