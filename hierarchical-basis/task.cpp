@@ -37,7 +37,7 @@ void Task::init() {
 	localMatrix = std::vector<std::vector<double>>(numOfBasisFunctions, std::vector<double>(numOfBasisFunctions));
 	localRightPart = std::vector<double>(numOfBasisFunctions);
 
-	// Аллокация памяти для решения СЛАУ
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	const int elemsInMatrix = globalMatrix.getAmountElems();
 	const int dimMatrix = globalMatrix.getDim();
 
@@ -88,7 +88,7 @@ void Task::fillAxisGrid(std::vector<double>& axis, double a, double b, int steps
 	if (abs(coef - 1) > 1e-13) step = (b - a) * (1 - coef) / (1 - pow(coef, steps));
 	else step = (b - a) / steps;
 
-	// Вычисление первого шага
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	coef = pow(coef, 1.0 / k);
 	steps *= k;
 
@@ -139,19 +139,19 @@ void Task::initSpaceGrid() {
 	xaxis = xAxisGrid;
 	yaxis = yAxisGrid;
 
-	// Формирование вектора элементов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	const int NODE_POINTS_SIZE = 4;
 	std::vector<int> globalNodes = std::vector<int>(NODE_POINTS_SIZE);
 
-	// Количество элементов в * плоскости в одном z-уровне
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ z-пїЅпїЅпїЅпїЅпїЅпїЅ
 	nx = xAxisGrid.size() - 1;
 	ny = yAxisGrid.size() - 1;
 
-	// Количество точек в * плоскости в одном z-уровне
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ z-пїЅпїЅпїЅпїЅпїЅпїЅ
 	npx = xAxisGrid.size();
 	npy = yAxisGrid.size();
 
-	// Заполнение вектора элементов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	int firstElemNode = 0;
 	for (int yi = 0; yi < yAxisGrid.size() - 1; yi++) {
 		for (int xi = 0; xi < xAxisGrid.size() - 1; xi++) {
@@ -499,8 +499,8 @@ void Task::initSpaceGrid() {
 	for (int i = 0, elInd = nx - 1; i < ny; i++, elInd += nx) boundariesElemsRight[i] = elInd;
 
 	// for sake of debug elems orders:
-	bool drawOrders = false;
-	bool drawElems = false;
+	bool drawOrders = true;
+	bool drawElems = true;
 
 	if(drawOrders) {
 
@@ -584,7 +584,7 @@ void Task::formatingGlobalMatrixPortrait() {
 		else return true;
 	};
 
-	// Формирование связей
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	for (auto& el : elems) {
 		/*
 			[2] - [8] - [3]
@@ -609,25 +609,25 @@ void Task::formatingGlobalMatrixPortrait() {
 		}
 	}
 
-	// Сортировка столбцов
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	for (auto& columns : temp) {
 		std::sort(columns.begin(), columns.end());
 	}
 
-	// Вычисление jj вектора:
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ jj пїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
 	std::vector<int> jg;
 	for (auto& vec : temp) {
 		std::copy(vec.begin(), vec.end(), back_inserter(jg));
 	}
 
-	// Вычисление ig вектора
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ig пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	std::vector<int> ig;
 	ig.push_back(0);
 	for (auto& vec : temp) {
 		ig.push_back(ig.back() + vec.size());
 	}
 
-	// Инициализация глобальной матрицы
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	globalMatrix.init(DIM, ig, jg);
 }
 
@@ -722,6 +722,7 @@ void Task::addLocalRigtPartToGlobal(const FiniteElem& elem) {
 void Task::setFirstBoundaryConditions() {
 	// =============================================================================================
 	// ADD BOTTOM ELEMS:
+	//std::cout << "Bottom: " << std::endl;
 	for (int ind : boundariesElemsBottom) {
 		auto& elem = elems[ind];
 
@@ -735,10 +736,13 @@ void Task::setFirstBoundaryConditions() {
 		globalMatrix.setFirstBoundaryCondition(elem.info[0]);
 		f[elem.info[0]] = boundaryFunction(x0, y0);
 
+		//std::cout << elem.info[0] << std::endl;
+
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[6]);
 			f[elem.info[6]] = boundaryFunction((x0 + x1) / 2, y0);
+			//std::cout << elem.info[6] << std::endl;
 		}
 	}
 
@@ -746,9 +750,11 @@ void Task::setFirstBoundaryConditions() {
 	auto lastElem = elems[boundariesElemsBottom.back()];
 	globalMatrix.setFirstBoundaryCondition(lastElem.info[1]);
 	f[lastElem.info[1]] = boundaryFunction(nodes[lastElem.nodes[1]].x, nodes[lastElem.nodes[1]].y);
+	//std::cout << lastElem.info[1] << std::endl;
 
 	// =============================================================================================
 	// ADD TOP ELEMS:
+	//std::cout << "Top: " << std::endl;
 	for (int ind : boundariesElemsTop) {
 		auto& elem = elems[ind];
 
@@ -761,11 +767,13 @@ void Task::setFirstBoundaryConditions() {
 		// add left top elem
 		globalMatrix.setFirstBoundaryCondition(elem.info[2]);
 		f[elem.info[2]] = boundaryFunction(x0, y1);
+		//std::cout << elem.info[2] << std::endl;
 
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[8]);
 			f[elem.info[8]] = boundaryFunction((x0 + x1) / 2, y1);
+			//std::cout << elem.info[8] << std::endl;
 		}
 	}
 
@@ -773,9 +781,11 @@ void Task::setFirstBoundaryConditions() {
 	lastElem = elems[boundariesElemsTop.back()];
 	globalMatrix.setFirstBoundaryCondition(lastElem.info[3]);
 	f[lastElem.info[3]] = boundaryFunction(nodes[lastElem.nodes[3]].x, nodes[lastElem.nodes[3]].y);
+	//std::cout << lastElem.info[3] << std::endl;
 
 	// =============================================================================================
 	// ADD LEFT ELEMS:
+	// std::cout << "Left: " << std::endl;
 	for (int ind : boundariesElemsLeft) {
 		auto& elem = elems[ind];
 
@@ -788,11 +798,13 @@ void Task::setFirstBoundaryConditions() {
 		// add bottom left elem
 		globalMatrix.setFirstBoundaryCondition(elem.info[0]);
 		f[elem.info[0]] = boundaryFunction(x0, y0);
+		//std::cout << elem.info[0] << std::endl;
 
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[5]);
 			f[elem.info[5]] = boundaryFunction(x0, (y0+y1)/2);
+			//std::cout << elem.info[5] << std::endl;
 		}
 	}
 
@@ -800,9 +812,11 @@ void Task::setFirstBoundaryConditions() {
 	lastElem = elems[boundariesElemsLeft.back()];
 	globalMatrix.setFirstBoundaryCondition(lastElem.info[2]);
 	f[lastElem.info[2]] = boundaryFunction(nodes[lastElem.nodes[2]].x, nodes[lastElem.nodes[2]].y);
+	//std::cout << lastElem.info[2] << std::endl;
 
 	// =============================================================================================
 	// ADD RIGHT ELEMS:
+	//std::cout << "Right: " << std::endl;
 	for (int ind : boundariesElemsRight) {
 		auto& elem = elems[ind];
 
@@ -815,11 +829,13 @@ void Task::setFirstBoundaryConditions() {
 		// add bottom right elem
 		globalMatrix.setFirstBoundaryCondition(elem.info[1]);
 		f[elem.info[1]] = boundaryFunction(x1, y0);
+		//std::cout << elem.info[1] << std::endl;
 
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[7]);
-			f[elem.info[5]] = boundaryFunction(x1, (y0 + y1) / 2);
+			f[elem.info[7]] = boundaryFunction(x1, (y0 + y1) / 2);
+			//std::cout << elem.info[7] << std::endl;
 		}
 	}
 
@@ -827,6 +843,7 @@ void Task::setFirstBoundaryConditions() {
 	lastElem = elems[boundariesElemsRight.back()];
 	globalMatrix.setFirstBoundaryCondition(lastElem.info[3]);
 	f[lastElem.info[3]] = boundaryFunction(nodes[lastElem.nodes[3]].x, nodes[lastElem.nodes[3]].y);
+	//std::cout << lastElem.info[3] << std::endl;
 	// =============================================================================================
 }
 
@@ -946,11 +963,10 @@ void Task::initParams() {
 	switch (CASE) {
 	case 1: {
 		lambda = 1;
-		gamma = 1;
+		gamma = 0;
 
-		boundaryFunction = [](double x, double y) {return 10 * x + y; };
-		rightPartFunction = [this](double x, double y) {return this->gamma * this->boundaryFunction(x,y); };
-
+		boundaryFunction = [](double x, double y) {return x; };
+		rightPartFunction = [this](double x, double y) {return 0; };
 
 		break;
 	}
@@ -1023,7 +1039,7 @@ void Task::solve() {
 		addLocalRigtPartToGlobal(el);
 	}
 
-	// Дублирование элементов из нижнего треугольника матрицы в верхний
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	globalMatrix.fillGGU();
 	setFirstBoundaryConditions();
 
