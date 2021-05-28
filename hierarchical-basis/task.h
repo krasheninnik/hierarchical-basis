@@ -70,7 +70,10 @@ private:
 
 	// Hierarchical basis functions and derivates	
 	std::vector<func2> localFunc;
+	std::vector<func2> localDx;
+	std::vector<func2> localDy;
 	std::vector<func2> localDFunc;
+	std::vector<std::vector<func2>> local2DFunc;
 
 	static const int numOfBasisFunctions = 9;
 
