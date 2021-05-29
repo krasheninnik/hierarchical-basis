@@ -63,15 +63,15 @@ void Task::init() {
 
 	localDFunc.resize(numOfBasisFunctions);
 
-	localFunc[0] = [f1, f2, f3](double x, double y) { return f1(x) * f1(y); };
-	localFunc[1] = [f1, f2, f3](double x, double y) { return f2(x) * f1(y); };
-	localFunc[2] = [f1, f2, f3](double x, double y) { return f1(x) * f2(y); };
-	localFunc[3] = [f1, f2, f3](double x, double y) { return f2(x) * f2(y); };
-	localFunc[4] = [f1, f2, f3](double x, double y) { return f1(x) * f3(y); };
-	localFunc[5] = [f1, f2, f3](double x, double y) { return f2(x) * f3(y); };
-	localFunc[6] = [f1, f2, f3](double x, double y) { return f3(x) * f1(y); };
-	localFunc[7] = [f1, f2, f3](double x, double y) { return f3(x) * f2(y); };
-	localFunc[8] = [f1, f2, f3](double x, double y) { return f3(x) * f3(y); };
+	localFunc[0] = [f1, f2, f3](double x, double y, double dx, double dy) { return f1(x/dx) * f1(y/dy); };
+	localFunc[1] = [f1, f2, f3](double x, double y, double dx, double dy) { return f2(x/dx) * f1(y/dy); };
+	localFunc[2] = [f1, f2, f3](double x, double y, double dx, double dy) { return f1(x/dx) * f2(y/dy); };
+	localFunc[3] = [f1, f2, f3](double x, double y, double dx, double dy) { return f2(x/dx) * f2(y/dy); };
+	localFunc[4] = [f1, f2, f3](double x, double y, double dx, double dy) { return f1(x/dx) * f3(y/dy); };
+	localFunc[5] = [f1, f2, f3](double x, double y, double dx, double dy) { return f2(x/dx) * f3(y/dy); };
+	localFunc[6] = [f1, f2, f3](double x, double y, double dx, double dy) { return f3(x/dx) * f1(y/dy); };
+	localFunc[7] = [f1, f2, f3](double x, double y, double dx, double dy) { return f3(x/dx) * f2(y/dy); };
+	localFunc[8] = [f1, f2, f3](double x, double y, double dx, double dy) { return f3(x/dx) * f3(y/dy); };
 
 	localDFunc[0] = [df1, df2, df3](double x, double y) { return df1(x) * df1(y); };
 	localDFunc[1] = [df1, df2, df3](double x, double y) { return df2(x) * df1(y); };
@@ -83,34 +83,36 @@ void Task::init() {
 	localDFunc[7] = [df1, df2, df3](double x, double y) { return df3(x) * df2(y); };
 	localDFunc[8] = [df1, df2, df3](double x, double y) { return df3(x) * df3(y); };
 
-	localDx[0] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df1(x) * f1(y); };
-	localDx[1] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df2(x) * f1(y); };
-	localDx[2] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df1(x) * f2(y); };
-	localDx[3] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df2(x) * f2(y); };
-	localDx[4] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df1(x) * f3(y); };
-	localDx[5] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df2(x) * f3(y); };
-	localDx[6] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df3(x) * f1(y); };
-	localDx[7] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df3(x) * f2(y); };
-	localDx[8] = [f1, f2, f3, df1, df2, df3](double x, double y) { return df3(x) * f3(y); };
+	localDx[0] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df1(x / dx) * f1(y / dy); };
+	localDx[1] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df2(x / dx) * f1(y / dy); };
+	localDx[2] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df1(x / dx) * f2(y / dy); };
+	localDx[3] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df2(x / dx) * f2(y / dy); };
+	localDx[4] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df1(x / dx) * f3(y / dy); };
+	localDx[5] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df2(x / dx) * f3(y / dy); };
+	localDx[6] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df3(x / dx) * f1(y / dy); };
+	localDx[7] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df3(x / dx) * f2(y / dy); };
+	localDx[8] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return df3(x / dx) * f3(y / dy); };
 
-	localDy[0] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f1(x) * df1(y); };
-	localDy[1] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f2(x) * df1(y); };
-	localDy[2] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f1(x) * df2(y); };
-	localDy[3] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f2(x) * df2(y); };
-	localDy[4] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f1(x) * df3(y); };
-	localDy[5] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f2(x) * df3(y); };
-	localDy[6] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f3(x) * df1(y); };
-	localDy[7] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f3(x) * df2(y); };
-	localDy[8] = [f1, f2, f3, df1, df2, df3](double x, double y) { return f3(x) * df3(y); };
+	localDy[0] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f1(x / dx) * df1(y / dy); };
+	localDy[1] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f2(x / dx) * df1(y / dy); };
+	localDy[2] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f1(x / dx) * df2(y / dy); };
+	localDy[3] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f2(x / dx) * df2(y / dy); };
+	localDy[4] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f1(x / dx) * df3(y / dy); };
+	localDy[5] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f2(x / dx) * df3(y / dy); };
+	localDy[6] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f3(x / dx) * df1(y / dy); };
+	localDy[7] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f3(x / dx) * df2(y / dy); };
+	localDy[8] = [f1, f2, f3, df1, df2, df3](double x, double y, double dx, double dy) { return f3(x / dx) * df3(y / dy); };
 
 	local2DFunc.resize(numOfBasisFunctions);
 	for (auto& v : local2DFunc) v = std::vector<func2>(numOfBasisFunctions);
 
+	/*
 	for (int i = 0; i < local2DFunc.size(); i++) {
 		for (int j = 0; j < local2DFunc.size(); j++) {
 			local2DFunc[i][j] = [this, i, j](double x, double y) {return this->localDx[i](x,y)* this->localDx[j](x,y) + this->localDy[i](x,y) * this->localDy[j](x,y); };
 		}
 	}
+	*/
 }
 
 void Task::fillAxisGrid(std::vector<double>& axis, double a, double b, int steps, double coef, const int k) {
@@ -678,29 +680,18 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 
 
 	// calculate (gradU gradV) integral
-	for (int row = 0; row < local2DFunc.size(); row++) {
-		for (int column = 0; column < local2DFunc.size(); column++) {
-			auto func = [this, row, column](double x, double y) {return this->lambda * this->local2DFunc[row][column](x, y); };
-			double integral = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
-			localMatrix[row][column] = integral;
-			//local2DFunc[i][j] = [this, i, j](double x, double y) {return this->localDx[i](x, y) * this->localDx[j](x, y) + this->localDy[i](x, y) * this->localDy[j](x, y); };
-		}
-	}
-
-	/*
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
-			auto func = [this, row, column](double x, double y) {return this->lambda * this->localDFunc[row](x, y) * this->localDFunc[column](x, y); };
+			auto func = [this, row, column, dx, dy](double x, double y) {return this->lambda * this->localDx[row](x, y, dx, dy) * this->localDx[column](x, y, dx, dy) + this->localDy[row](x, y, dx, dy) * this->localDy[column](x, y, dx, dy); };
 			double integral = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
 			localMatrix[row][column] = integral;
 		}
 	}
-	*/
 
 	// calculate (U V) integral 
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
-			auto func = [this, row, column](double x, double y) {return this->gamma  * this->localFunc[row](x, y) * this->localFunc[column](x, y); };
+			auto func = [this, row, column, dx, dy](double x, double y) {return this->gamma  * this->localFunc[row](x, y, dx, dy) * this->localFunc[column](x, y, dx, dy); };
 			double integral = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
 			localMatrix[row][column] += integral;
 		}
@@ -721,7 +712,7 @@ void Task::calculateLocalRightPart(const FiniteElem& el) {
 
 	// calculate (f V) integral
 	for (int row = 0; row < localRightPart.size(); row++) {
-		auto func = [this, row](double x, double y) {return this->rightPartFunction(x,y) * this->localFunc[row](x, y); };
+		auto func = [this, row, dx, dy](double x, double y) {return this->rightPartFunction(x,y) * this->localFunc[row](x, y, dx, dy); };
 		localRightPart[row] = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
 	}
 
@@ -980,18 +971,24 @@ double Task::resultInXY(double xCord, double yCord) {
 	double y1 = nodes[elem.nodes[2]].y;
 	double y0 = nodes[elem.nodes[0]].y;
 
+	double dx = x1 - x0;
+	double dy = y1 - y0;
+
 	auto changeVariable = [](double x, double a, double b) {
 		double halflenght = (b - a) / 2;
 		return (x - a - halflenght) / halflenght;
 	};
 
 	double res = 0;
+
 	for(int ind = 0; ind < elem.info.size(); ind++) {
 		if (elem.info[ind] != -1) {
 			double w = x[elem.info[ind]];
 			double lf = localFunc[ind](
 				changeVariable(xCord, x0, x1),
-				changeVariable(yCord, y0, y1));
+				changeVariable(yCord, y0, y1),
+				1,
+				1);
 
 			res += x[elem.info[ind]] * lf;
 		}
@@ -1008,18 +1005,17 @@ void Task::initParams() {
 		lambda = 1;
 		gamma = 1;
 
-		boundaryFunction = [](double x, double y) {return 10*x; };
-		rightPartFunction = [this](double x, double y) {return this->boundaryFunction(x, y) * this->gamma;; };
+		boundaryFunction = [](double x, double y) {return 10 * x + y; };
+		rightPartFunction = [this](double x, double y) {return this->gamma * this->boundaryFunction(x,y); };
 
 		break;
 	}
 	case 2: {
+		lambda = 1;
+		gamma = 1;
 
-		lambda = 10;
-		gamma = 5;
-
-		boundaryFunction = [](double x, double y) {return 10 * x; };
-		rightPartFunction = [this](double x, double y) {return this->gamma * this->boundaryFunction(x,y); };
+		boundaryFunction = [](double x, double y) {return x * x + y; };
+		rightPartFunction = [this](double x, double y) {return -2 + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
@@ -1101,6 +1097,7 @@ void Task::solve() {
 		std::cout << "----------------------------------------------------------------" << std::endl;;
 	}
 	*/
+
 	double x = 0.5;
 	double y = 0.5;
 

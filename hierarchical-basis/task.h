@@ -45,6 +45,7 @@ struct FiniteElem {
 class Task {
 	using func1 = std::function<double(double)>;
 	using func2 = std::function<double(double, double)>;
+	using func4 = std::function<double(double, double, double, double)>;
 
 public:
 	void init();
@@ -69,9 +70,9 @@ private:
 	const int gaussIntegrationOrder = 5;
 
 	// Hierarchical basis functions and derivates	
-	std::vector<func2> localFunc;
-	std::vector<func2> localDx;
-	std::vector<func2> localDy;
+	std::vector<func4> localFunc;
+	std::vector<func4> localDx;
+	std::vector<func4> localDy;
 	std::vector<func2> localDFunc;
 	std::vector<std::vector<func2>> local2DFunc;
 
