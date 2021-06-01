@@ -249,7 +249,6 @@ void Task::initSpaceGrid() {
 	}
 
 	// fill "info" array for second elems 
-
 	int lastFunction = nodes.size() - 1;
 	auto setElemInfoIfItNotInited = [this, &lastFunction](int sourceElemInd, int sourceInfoInd) {
 		if (elems[sourceElemInd].info[sourceInfoInd] == -1) elems[sourceElemInd].info[sourceInfoInd] = ++lastFunction;
@@ -268,7 +267,6 @@ void Task::initSpaceGrid() {
 			}
 		}
 	};
-
 
 	for (int i = 0; i < secondOrderElemsAreas.size(); i++) {
 		auto area = secondOrderElemsAreas[i];
@@ -624,7 +622,13 @@ void Task::initSpaceGrid() {
 }
 	
 void Task::formatingGlobalMatrixPortrait() {
-	const int DIM = elems.back().info.back() + 1;
+	//DIM = elems.back().info.back() + 1;
+	for (auto el : elems) {
+		int maximum = *max_element(el.info.begin(), el.info.end());
+		if (maximum > DIM) DIM = maximum;
+	}
+	DIM++;
+
 	std::vector<std::vector<int>> temp(DIM);
 
 	std::function<bool(std::vector<int>&, double)> hasValue = [](std::vector<int>& v, double value) {
@@ -1057,6 +1061,15 @@ void Task::initParams() {
 
 		boundaryFunction = [](double x, double y) {return x * x * x * y * y * y; };
 		rightPartFunction = [this](double x, double y) {return -1 * (6 *x * y * y * y + 6 *y * x * x * x) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
+
+		break;
+	}
+	case 6: {
+		lambda = 1;
+		gamma = 1;
+
+		boundaryFunction = [](double x, double y) {return exp(x)+exp(y); };
+		rightPartFunction = [this](double x, double y) {return -1 * (exp(x) + exp(y)) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}

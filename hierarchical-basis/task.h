@@ -115,6 +115,7 @@ private:
 	int fyz;
 	int faceNumInZlayer;
 	int faceNum;
+	int DIM;
 
 	std::vector<double> xaxis;
 	std::vector<double> yaxis;
