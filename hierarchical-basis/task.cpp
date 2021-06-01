@@ -696,7 +696,7 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
 			auto func = [this, row, column, dx, dy](double x, double y) {return this->lambda * this->localDx[row](x, y, dx, dy) * this->localDx[column](x, y, dx, dy) + this->localDy[row](x, y, dx, dy) * this->localDy[column](x, y, dx, dy); };
-			double integral = gaussIntegration.nPointsGauss(-dx, dx, -dy, dy, func);
+			double integral = gaussIntegration.nPointsGauss(-dx, dx, -dy, dy, func) * 4;
 			localMatrix[row][column] = integral;
 		}
 	}
@@ -1028,7 +1028,7 @@ void Task::initParams() {
 		gamma = 1;
 
 		boundaryFunction = [](double x, double y) {return  x * x + y * y; };
-		rightPartFunction = [this](double x, double y) {return (-4 * this->lambda)/4 + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y) {return -4 * this->lambda + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
@@ -1037,8 +1037,8 @@ void Task::initParams() {
 		gamma = 1;
 
 		
-		boundaryFunction = [](double x, double y) {return y * y * y + x * x * x; };
-		rightPartFunction = [this](double x, double y) {return (-1 * this->lambda * (6 * y + 6 * x) ) / 4 + this->gamma * this->boundaryFunction(x, y); };
+		boundaryFunction = [](double x, double y) {return 25 *( y * y * y + x * x * x); };
+		rightPartFunction = [this](double x, double y) {return -1 * 25 * this->lambda * (6 * y + 6 * x) + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
@@ -1047,7 +1047,7 @@ void Task::initParams() {
 		gamma = 1;
 
 		boundaryFunction = [](double x, double y) {return x * x * y * y; };
-		rightPartFunction = [this](double x, double y) {return (-1 * (2*y*y + 2*x * x) * this->lambda) / 4 + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y) {return -1 * (2*y*y + 2*x * x) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
@@ -1056,7 +1056,7 @@ void Task::initParams() {
 		gamma = 1;
 
 		boundaryFunction = [](double x, double y) {return x * x * x * y * y * y; };
-		rightPartFunction = [this](double x, double y) {return (-1 * (6 *x * y * y * y + 6 *y * x * x * x) * this->lambda) / 4 + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y) {return -1 * (6 *x * y * y * y + 6 *y * x * x * x) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
