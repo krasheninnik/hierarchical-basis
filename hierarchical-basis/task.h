@@ -73,8 +73,9 @@ private:
 	std::vector<func4> localFunc;
 	std::vector<func4> localDx;
 	std::vector<func4> localDy;
-	std::vector<func2> localDFunc;
-	std::vector<std::vector<func2>> local2DFunc;
+	std::vector<func4> localFuncTemp;
+	std::vector<func4> localDxTemp;
+	std::vector<func4> localDyTemp;
 
 	static const int numOfBasisFunctions = 9;
 
