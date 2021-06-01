@@ -692,12 +692,11 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 	assert(dx > 0);
 	assert(dy > 0);
 
-
 	// calculate (gradU gradV) integral
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
 			auto func = [this, row, column, dx, dy](double x, double y) {return this->lambda * this->localDx[row](x, y, dx, dy) * this->localDx[column](x, y, dx, dy) + this->localDy[row](x, y, dx, dy) * this->localDy[column](x, y, dx, dy); };
-			double integral = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+			double integral = gaussIntegration.nPointsGauss(-0.5 * dx, 0.5 * dx, -0.5 * dy, 0.5 * dy, func);
 			localMatrix[row][column] = integral;
 		}
 	}
@@ -705,13 +704,13 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 	// calculate (U V) integral 
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
-			auto func = [this, row, column, dx, dy](double x, double y) {return this->gamma  * this->localFunc[row](x, y, dx, dy) * this->localFunc[column](x, y, dx, dy); };
-			double integral = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+			auto func = [this, row, column, dx, dy](double x, double y) {return this->gamma * this->localFunc[row](x, y, dx, dy) * this->localFunc[column](x, y, dx, dy); };
+			double integral = gaussIntegration.nPointsGauss(-0.5 * dx, 0.5 * dx, -0.5 * dy, 0.5 * dy, func);
 			localMatrix[row][column] += integral;
 		}
 	}
 
-	//int c = 3;
+	int c = 3;
 }
 
 void Task::calculateLocalRightPart(const FiniteElem& el) {
@@ -726,8 +725,8 @@ void Task::calculateLocalRightPart(const FiniteElem& el) {
 
 	// calculate (f V) integral
 	for (int row = 0; row < localRightPart.size(); row++) {
-		auto func = [this, row, dx, dy](double x, double y) {return this->rightPartFunction(x,y) * this->localFunc[row](x, y, dx, dy); };
-		localRightPart[row] = gaussIntegration.nPointsGauss(x0, x1, y0, y1, func);
+		auto func = [this, row, dx, dy, x0, y0](double x, double y) {return this->rightPartFunction(x0 + 0.5*dx + x, y0 + 0.5 * dy + y) * this->localFunc[row](x, y, dx, dy); };
+		localRightPart[row] = gaussIntegration.nPointsGauss(-0.5 * dx, 0.5 * dx, -0.5 * dy, 0.5 * dy, func);
 	}
 
 	int c = 3;
@@ -789,7 +788,7 @@ void Task::setFirstBoundaryConditions() {
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[6]);
-			f[elem.info[6]] = boundaryFunction((x0 + x1) / 2, y0);
+			f[elem.info[6]] = boundaryFunction((x0 + x1) / 2, y0) - 0.5*(boundaryFunction(x0,y0) + boundaryFunction(x1,y0));
 			//std::cout << elem.info[6] << std::endl;
 		}
 	}
@@ -820,7 +819,7 @@ void Task::setFirstBoundaryConditions() {
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[8]);
-			f[elem.info[8]] = boundaryFunction((x0 + x1) / 2, y1);
+			f[elem.info[8]] = boundaryFunction((x0 + x1) / 2, y1) - 0.5 * (boundaryFunction(x0, y1) + boundaryFunction(x1, y1));
 			//std::cout << elem.info[8] << std::endl;
 		}
 	}
@@ -851,7 +850,7 @@ void Task::setFirstBoundaryConditions() {
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[5]);
-			f[elem.info[5]] = boundaryFunction(x0, (y0+y1)/2);
+			f[elem.info[5]] = boundaryFunction(x0, (y0+y1)/2) - 0.5 * (boundaryFunction(x0, y0) + boundaryFunction(x0, y1));
 			//std::cout << elem.info[5] << std::endl;
 		}
 	}
@@ -882,7 +881,7 @@ void Task::setFirstBoundaryConditions() {
 		if (elem.functionOrder == 2) {
 			// add mid bottom elem
 			globalMatrix.setFirstBoundaryCondition(elem.info[7]);
-			f[elem.info[7]] = boundaryFunction(x1, (y0 + y1) / 2);
+			f[elem.info[7]] = boundaryFunction(x1, (y0 + y1) / 2) - 0.5 * (boundaryFunction(x1, y0) + boundaryFunction(x1, y1));;
 			//std::cout << elem.info[7] << std::endl;
 		}
 	}
@@ -1019,7 +1018,7 @@ void Task::initParams() {
 		lambda = 1;
 		gamma = 1;
 
-		boundaryFunction = [](double x, double y) {return 10 * x; };
+		boundaryFunction = [](double x, double y) {return 10 * x + y; };
 		rightPartFunction = [this](double x, double y) {return this->gamma * this->boundaryFunction(x,y); };
 
 		break;
@@ -1030,42 +1029,6 @@ void Task::initParams() {
 
 		boundaryFunction = [](double x, double y) {return x * x; };
 		rightPartFunction = [this](double x, double y) {return -2 * this->lambda + this->gamma * this->boundaryFunction(x, y); };
-
-		break;
-	}
-	case 3: {
-		/*
-		1
-		1
-		0 10 5 1
-		1
-		0 10 5 1
-		0
-		*/
-
-		lambda = 1;
-		gamma = 0;
-
-		boundaryFunction = [](double x, double y) {return x * x + y * y; };
-		rightPartFunction = [this](double x, double y) {return -4 * this->lambda + this->gamma * this->boundaryFunction(x, y); };
-
-		break;
-	}
-	case 4: {
-		/* GRID:
-		2
-		1
-		0 10 5 1
-		1
-		0 10 5 1
-		0	
-		*/
-		lambda = 1;
-		gamma = 1;
-
-		boundaryFunction = [](double x, double y) {return 10 * x * x; };
-		rightPartFunction = [this](double x, double y) 
-			{return -20 * this->lambda + this->gamma * this->boundaryFunction(x,y); };
 
 		break;
 	}
@@ -1098,7 +1061,7 @@ void Task::solve() {
 
 	PARDISOsolve();
 	
-	/*
+	
 	std::cout << setw(4) << "y" << " " << setw(4) << "x" << ":    " << setw(15) << "res" << " " << setw(15) << "exact" << " " << setw(15) << "res - exact" << std::endl;
 	std::cout << "----------------------------------------------------------------" << std::endl;;
 	for (double y : yaxis) {
@@ -1106,18 +1069,58 @@ void Task::solve() {
 			double res = resultInXY(x, y);
 			double exact = boundaryFunction(x, y);
 
-			std::cout << setw(4) << y << " " << setw(4) << x << ":    " << setw(15) << res << " " << setw(15) << exact << " " << setw(15) << res - exact << std::endl;
+			std::cout << setw(4) << y << " " << setw(4) << x << ":    " << setw(15) << res << " " << setw(15) << exact << " " << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
 		}
 		std::cout << "----------------------------------------------------------------" << std::endl;;
 	}
+	
+	
+	
+	/*
+	double xCord = 0.5;
+	double yCord = 0.5;
+
+	double res = resultInXY(xCord, yCord);
+	double exact = boundaryFunction(xCord, yCord);
+
+	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+
+	xCord = 0;
+	yCord = 0.5;
+
+	res = resultInXY(xCord, yCord);
+	exact = boundaryFunction(xCord, yCord);
+
+	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+
+
+	xCord = 1;
+	yCord = 0.5;
+
+	res = resultInXY(xCord, yCord);
+	exact = boundaryFunction(xCord, yCord);
+
+	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+
+	xCord = 0.5;
+	yCord = 0;
+
+	res = resultInXY(xCord, yCord);
+	exact = boundaryFunction(xCord, yCord);
+
+	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+
+
+	xCord = 0.5;
+	yCord = 1;
+
+	res = resultInXY(xCord, yCord);
+	exact = boundaryFunction(xCord, yCord);
+
+	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+
 	*/
 
-	double x = 0.25;
-	double y = 0.25;
 
-
-	double res = resultInXY(x, y);
-	double exact = boundaryFunction(x, y);
-
-	std::cout << setw(4) << y << " " << setw(4) << x << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << " ref: " << setw(15) << (res - exact) / (exact) << std::endl;
+	int b = 1;
 }
