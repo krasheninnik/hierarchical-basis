@@ -170,12 +170,14 @@ void Task::initSpaceGrid() {
 	for (int i = 0; i < numOfSegm; i++) {
 		fin >> a >> b >> steps >> coef;
 		fillAxisGrid(xAxisGrid, a, b, steps, coef, k);
+		fillAxisGrid(xAxisWithoutDiv, a, b, steps, coef, 1);
 	}
 
 	fin >> numOfSegm;
 	for (int i = 0; i < numOfSegm; i++) {
 		fin >> a >> b >> steps >> coef;
 		fillAxisGrid(yAxisGrid, a, b, steps, coef, k);
+		fillAxisGrid(yAxisWithoutDiv, a, b, steps, coef, 1);
 	}
 
 	for (double y : yAxisGrid) {
@@ -1104,96 +1106,57 @@ void Task::solve() {
 	
 	
 	std::cout << setw(4) << "y" << " " << setw(4) << "x" << ":    " << setw(15) << "res" << " " << setw(15) << "exact" << " " << setw(15) << "res - exact" << std::endl;
-	std::cout << "----------------------------------------------------------------" << std::endl;;
+	std::cout << "--------------------------------------------------------------------------" << std::endl;;
 
 	double xstep = xaxis[1] - xaxis[0];
 	double ystep = yaxis[1] - yaxis[0];
 	double xMax = xaxis.back();
 	double yMax = yaxis.back();
 
-	for (double y : yaxis) {
-		for (double x : xaxis) {
+	for (double y : yAxisWithoutDiv) {
+		for (double x : xAxisWithoutDiv) {
 			double res = resultInXY(x, y);
 			double exact = boundaryFunction(x, y);
 
 			std::cout << setw(4) << y << " " << setw(4) << x << ":    " << setw(15) << res << " " << setw(15) << exact << " " << "| abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-			double xx = x + xstep;
-			if (xx < xMax) {
-				res = resultInXY(xx, y);
-				exact = boundaryFunction(xx, y);
-
-				std::cout << setw(4) << y << " " << setw(4) << xx << ":    " << setw(15) << res << " " << setw(15) << exact << " " << "| abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-			}
 		}
-
-		double yy = y + ystep;
-		if (yy < yMax)
-			for (double x : xaxis) {
-				double res = resultInXY(x, yy);
-				double exact = boundaryFunction(x, yy);
-
-				std::cout << setw(4) << yy << " " << setw(4) << x << ":    " << setw(15) << res << " " << setw(15) << exact << " " << "| abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-				double xx = x + xstep;
-				if (xx < xMax) {
-					res = resultInXY(xx, yy);
-					exact = boundaryFunction(xx, yy);
-
-					std::cout << setw(4) << yy << " " << setw(4) << xx << ":    " << setw(15) << res << " " << setw(15) << exact << " " << "| abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-				}
-
-			}
-		std::cout << "----------------------------------------------------------------" << std::endl;;
+		std::cout << "--------------------------------------------------------------------------" << std::endl;;
 	}
-	
-		
-	
 
-	double xCord = 0.5;
-	double yCord = 0.5;
-
-	double res = resultInXY(xCord, yCord);
-	double exact = boundaryFunction(xCord, yCord);
-
-	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-	xCord = 0;
-	yCord = 0.5;
-
-	res = resultInXY(xCord, yCord);
-	exact = boundaryFunction(xCord, yCord);
-
-	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-
-	xCord = 1;
-	yCord = 0.5;
-
-	res = resultInXY(xCord, yCord);
-	exact = boundaryFunction(xCord, yCord);
-
-	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-	xCord = 0.5;
-	yCord = 0;
-
-	res = resultInXY(xCord, yCord);
-	exact = boundaryFunction(xCord, yCord);
-
-	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-
-	xCord = 0.5;
-	yCord = 1;
-
-	res = resultInXY(xCord, yCord);
-	exact = boundaryFunction(xCord, yCord);
-
-	std::cout << setw(4) << yCord << " " << setw(4) << xCord << ":    " << setw(15) << res << " " << setw(15) << exact << " abs:" << setw(15) << res - exact << "| ref: " << setw(15) << (res - exact) / (exact) << std::endl;
-
-
-
-
+	std::cout << std::endl << "Error norm: " << calculateErrorNorm() << std::endl;
 	int b = 1;
+}
+
+
+double Task::calculateErrorNorm() {
+	double sum = 0;
+
+	for (double y : yAxisWithoutDiv) {
+		for (double x : xAxisWithoutDiv) {
+			double res = resultInXY(x, y);
+			double exact = boundaryFunction(x, y);
+
+			double error = 0;
+			if (exact != 0) {
+				error = (exact - res) / (exact);
+			}
+			sum += error * error;
+		}
+	}
+
+	/*
+	double errorSum = 0;
+	double exactSum = 0;
+
+	for (double y : yAxisWithoutDiv) {
+		for (double x : xAxisWithoutDiv) {
+			double res = resultInXY(x, y);
+			double exact = boundaryFunction(x, y);
+
+			errorSum += (exact - res) * (exact - res);
+			exactSum += exact * exact;
+		}
+	}
+	*/
+	return sqrt(sum);
 }

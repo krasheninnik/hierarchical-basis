@@ -64,6 +64,8 @@ private:
 
 	void setFirstBoundaryConditions();
 	void fillAxisGrid(std::vector<double>& axis, double a, double b , int steps, double coef, const int k);
+	double calculateErrorNorm();
+
 
 private:
 	GaussIntegration gaussIntegration;
@@ -84,6 +86,9 @@ private:
 
 	std::vector<Node> nodes;
 	std::vector<FiniteElem> elems;
+
+	std::vector<double> xAxisWithoutDiv;
+	std::vector<double> yAxisWithoutDiv;
 
 	std::vector<int> boundariesValue;
 
