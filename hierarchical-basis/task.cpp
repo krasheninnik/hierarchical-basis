@@ -271,7 +271,7 @@ void Task::initSpaceGrid() {
 
 	// check setting lambda and gamma:
 	for (auto& el : elems) {
-		assert(el.lambda != 0 && el.gamma != 0);
+		assert(el.lambda != 0 || el.gamma != 0);
 	}
 	// fill "info" array for second elems 
 	int lastFunction = nodes.size() - 1;
@@ -653,6 +653,8 @@ void Task::formatingGlobalMatrixPortrait() {
 		if (maximum > DIM) DIM = maximum;
 	}
 	DIM++;
+	std::cout << "Matrix DIM: " << DIM << std::endl;
+
 
 	std::vector<std::vector<int>> temp(DIM);
 
@@ -1046,11 +1048,11 @@ double Task::resultInXY(double xCord, double yCord) {
 }
 
 void Task::initParams() {
-	int CASE = 2;
+	int CASE = 7;
 
 	switch (CASE) {
 	case 1: {
-		boundaryFunction = [](double x, double y) {return 10 * x + y; };
+		boundaryFunction = [](double x, double y) {return x + y; };
 		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return gamma * this->boundaryFunction(x,y); };
 
 		break;
@@ -1062,26 +1064,32 @@ void Task::initParams() {
 		break;
 	}
 	case 3: {
-		boundaryFunction = [](double x, double y) {return 25 *( y * y * y + x * x * x); };
-		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * 25 * lambda * (6 * y + 6 * x) + gamma * this->boundaryFunction(x, y); };
+		boundaryFunction = [](double x, double y) {return ( y * y * y + x * x * x); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * lambda * (6 * y + 6 * x) + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 4: {
-		boundaryFunction = [](double x, double y) {return x * x * y * y; };
-		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (2*y*y + 2*x * x) * lambda + gamma * this->boundaryFunction(x, y); };
+		boundaryFunction = [](double x, double y) {return (y * y * y * y +  x * x * x * x); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (12*y*y + 12 *x * x) * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 5: {
-		boundaryFunction = [](double x, double y) {return x * x * x * y * y * y; };
-		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (6 *x * y * y * y + 6 *y * x * x * x) * lambda + gamma * this->boundaryFunction(x, y); };
+		boundaryFunction = [](double x, double y) {return (y * y * y * y * y + x * x * x * x * x); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (20 * y * y * y + 20 * x * x * x) * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 6: {
-		boundaryFunction = [](double x, double y) {return exp(x)+exp(y); };
-		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (exp(x) + exp(y)) * lambda + gamma * this->boundaryFunction(x, y); };
+		boundaryFunction = [](double x, double y) {return sin(x) * cos(y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (-2* cos(y) *sin(x)) * lambda + gamma * this->boundaryFunction(x, y); };
+
+		break;
+	}
+	case 7: {
+		boundaryFunction = [](double x, double y) {return 3*x + 2*y; };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
@@ -1136,8 +1144,9 @@ void Task::solve() {
 
 
 double Task::calculateErrorNorm() {
+	
 	double sum = 0;
-
+	/*
 	for (double y : yAxisWithoutDiv) {
 		for (double x : xAxisWithoutDiv) {
 			double res = resultInXY(x, y);
@@ -1150,11 +1159,12 @@ double Task::calculateErrorNorm() {
 			sum += error * error;
 		}
 	}
-
-	/*
+	double ans = sqrt(sum);
+		*/
 	double errorSum = 0;
 	double exactSum = 0;
 
+	/*
 	for (double y : yAxisWithoutDiv) {
 		for (double x : xAxisWithoutDiv) {
 			double res = resultInXY(x, y);
@@ -1165,5 +1175,19 @@ double Task::calculateErrorNorm() {
 		}
 	}
 	*/
-	return sqrt(sum);
+	std::vector<double> rx{0.05, 0.1,	0.13,	0.17,	0.25,	0.25,	0.333,	0.37,	0.4,	0.42,	0.483};
+	std::vector<double> ry{0.05, 0.35,	0.2,	0.45,	0.35,	0.1,	0.3,	0.44,	0.2,	0.25,	0.495 };
+
+	for (int i = 0; i < rx.size(); i++) {
+		double res = resultInXY(rx[i], ry[i]);
+		double exact = boundaryFunction(rx[i], ry[i]);
+
+		errorSum += (exact - res) * (exact - res);
+		exactSum += exact * exact;
+	}
+
+
+	double ans = sqrt(errorSum) / sqrt(exactSum);
+
+	return ans;
 }
