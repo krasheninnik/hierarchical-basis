@@ -24,10 +24,6 @@ void FiniteElem::expandInfo() {
 }
 
 void Task::init() {
-	std::fstream fin(R"(input\params.txt)");
-	fin >> lambda;
-	fin.close();
-
 	gaussIntegration.init(gaussIntegrationOrder);
 
 	initSpaceGrid();
@@ -250,6 +246,33 @@ void Task::initSpaceGrid() {
 		}
 	}
 
+	// set lambda and gamma:
+	int areasSize = 0;
+	double theLambda = 0, theGamma = 0;
+	fin >> areasSize;
+	for (int i = 0; i < areasSize; i++) {
+		int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+		fin >> x0 >> y0 >> x1 >> y1 >> theLambda >> theGamma;
+
+		// consider grid division:
+		x0 *= k;
+		y0 *= k;
+		x1 = (x1 + 1) * k - 1;
+		y1 = (y1 + 1) * k - 1;
+
+		//  set lambda and gamma
+		for (int yi = y0; yi <= y1; yi++) {
+			for (int xi = x0; xi <= x1; xi++) {
+				elems[getElemInd(xi, yi)].lambda = theLambda;
+				elems[getElemInd(xi, yi)].gamma = theGamma;
+			}
+		}
+	}
+
+	// check setting lambda and gamma:
+	for (auto& el : elems) {
+		assert(el.lambda != 0 && el.gamma != 0);
+	}
 	// fill "info" array for second elems 
 	int lastFunction = nodes.size() - 1;
 	auto setElemInfoIfItNotInited = [this, &lastFunction](int sourceElemInd, int sourceInfoInd) {
@@ -698,10 +721,13 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 	assert(dx > 0);
 	assert(dy > 0);
 
+	const double lambda = el.lambda;
+	const double gamma = el.gamma;
+
 	// calculate (gradU gradV) integral
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
-			auto func = [this, row, column, dx, dy](double x, double y) {return this->lambda * this->localDx[row](x, y, dx, dy) * this->localDx[column](x, y, dx, dy) + this->localDy[row](x, y, dx, dy) * this->localDy[column](x, y, dx, dy); };
+			auto func = [this, row, column, dx, dy, lambda, gamma](double x, double y) {return lambda * this->localDx[row](x, y, dx, dy) * this->localDx[column](x, y, dx, dy) + this->localDy[row](x, y, dx, dy) * this->localDy[column](x, y, dx, dy); };
 			double integral = gaussIntegration.nPointsGauss(-dx, dx, -dy, dy, func) * 4;
 			localMatrix[row][column] = integral;
 		}
@@ -710,7 +736,7 @@ void Task::calculateLocalMatrix(const FiniteElem &el) {
 	// calculate (U V) integral 
 	for (int row = 0; row < el.info.size(); row++) {
 		for (int column = 0; column <= row; column++) {
-			auto func = [this, row, column, dx, dy](double x, double y) {return this->gamma * this->localFunc[row](x, y, dx, dy) * this->localFunc[column](x, y, dx, dy); };
+			auto func = [this, row, column, dx, dy, lambda, gamma](double x, double y) {return gamma * this->localFunc[row](x, y, dx, dy) * this->localFunc[column](x, y, dx, dy); };
 			double integral = gaussIntegration.nPointsGauss(-dx, dx, -dy, dy, func);
 			localMatrix[row][column] += integral;
 		}
@@ -729,9 +755,12 @@ void Task::calculateLocalRightPart(const FiniteElem& el) {
 	double dx = x1 - x0;
 	double dy = y1 - y0;
 
+	const double lambda = el.lambda;
+	const double gamma = el.gamma;
+
 	// calculate (f V) integral
 	for (int row = 0; row < localRightPart.size(); row++) {
-		auto func = [this, row, dx, dy, x0, y0](double x, double y) {return this->rightPartFunction(x0 + 0.5*(dx + x), y0 + 0.5 * (dy + y)) * this->localFunc[row](x, y, dx, dy); };
+		auto func = [this, row, dx, dy, x0, y0, lambda, gamma](double x, double y) {return this->rightPartFunction(x0 + 0.5*(dx + x), y0 + 0.5 * (dy + y), lambda, gamma) * this->localFunc[row](x, y, dx, dy); };
 		localRightPart[row] = gaussIntegration.nPointsGauss(-dx, dx, -dy, dy, func);
 	}
 
@@ -1021,66 +1050,44 @@ void Task::initParams() {
 
 	switch (CASE) {
 	case 1: {
-		lambda = 1;
-		gamma = 1;
-
 		boundaryFunction = [](double x, double y) {return 10 * x + y; };
-		rightPartFunction = [this](double x, double y) {return this->gamma * this->boundaryFunction(x,y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return gamma * this->boundaryFunction(x,y); };
 
 		break;
 	}
 	case 2: {
-		lambda = 1;
-		gamma = 1;
-
 		boundaryFunction = [](double x, double y) {return  x * x + y * y; };
-		rightPartFunction = [this](double x, double y) {return -4 * this->lambda + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -4 * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 3: {
-		lambda = 1;
-		gamma = 1;
-
-		
 		boundaryFunction = [](double x, double y) {return 25 *( y * y * y + x * x * x); };
-		rightPartFunction = [this](double x, double y) {return -1 * 25 * this->lambda * (6 * y + 6 * x) + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * 25 * lambda * (6 * y + 6 * x) + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 4: {
-		lambda = 1;
-		gamma = 1;
-
 		boundaryFunction = [](double x, double y) {return x * x * y * y; };
-		rightPartFunction = [this](double x, double y) {return -1 * (2*y*y + 2*x * x) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (2*y*y + 2*x * x) * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 5: {
-		lambda = 1;
-		gamma = 1;
-
 		boundaryFunction = [](double x, double y) {return x * x * x * y * y * y; };
-		rightPartFunction = [this](double x, double y) {return -1 * (6 *x * y * y * y + 6 *y * x * x * x) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (6 *x * y * y * y + 6 *y * x * x * x) * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	case 6: {
-		lambda = 1;
-		gamma = 1;
-
 		boundaryFunction = [](double x, double y) {return exp(x)+exp(y); };
-		rightPartFunction = [this](double x, double y) {return -1 * (exp(x) + exp(y)) * this->lambda + this->gamma * this->boundaryFunction(x, y); };
+		rightPartFunction = [this](double x, double y, double lambda, double gamma) {return -1 * (exp(x) + exp(y)) * lambda + gamma * this->boundaryFunction(x, y); };
 
 		break;
 	}
 	default: {
 		boundaryFunction = [](double x, double y) {return 10 * x + y; };
-		rightPartFunction = [](double x, double y) {return 10 * x + y; };
-
-		lambda = 1;
-		gamma = 1;
+		rightPartFunction = [](double x, double y, double lambda, double gamma) {return 10 * x + y; };
 		break;
 	}
 	}

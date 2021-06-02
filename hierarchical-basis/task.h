@@ -28,6 +28,9 @@ struct FiniteElem {
 	std::vector<int> nodes;
 	std::vector<int> info; 
 
+	double lambda;
+	double gamma;
+
 	/*	local nodes on the elem:
 			(indexes in info)
 		1-4 for first order
@@ -81,9 +84,6 @@ private:
 
 	static const int numOfBasisFunctions = 9;
 
-	double lambda = 1; // Коэффициент уравнения (вязкость / проницаемость)
-	double gamma = 1;
-
 	std::vector<Node> nodes;
 	std::vector<FiniteElem> elems;
 
@@ -97,7 +97,7 @@ private:
 	std::vector<int> boundariesElemsLeft;
 	std::vector<int> boundariesElemsRight;
 	func2 boundaryFunction;
-	func2 rightPartFunction;
+	func4 rightPartFunction;
 
 	SparseMatrix globalMatrix;
 	std::vector<double> f; // Глобальная правая часть
